@@ -128,7 +128,7 @@ const Prediction = () => {
   const sendToBackend = async (data) => {
     try {
       const response = await axios.post(
-        "http://127.0.0.1:5000/predict", // ✅ Flask endpoint
+        "http://127.0.0.1:8000/predict_all", // ✅ Flask endpoint
         { data }
       );
       setResults(response.data.predictions);
@@ -206,21 +206,35 @@ const Prediction = () => {
       {/* Results */}
       {results && (
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
-          {Object.entries(results).map(([disease, score]) => (
+          {Object.entries(results).map(([disease, output]) => (
             <div
               key={disease}
               className="bg-white p-6 rounded-xl shadow-md border-l-8"
-              style={{ borderLeftColor: getColor(score) }}
+              style={{ borderLeftColor: getColor(output.risk) }}
             >
-              <h3 className="text-lg font-semibold text-gray-700 capitalize">{disease}</h3>
-              <p className="text-gray-900 font-bold">
-                Risk Score:{" "}
-                <span style={{ color: getColor(score) }}>{score.toFixed(2)}%</span>
-              </p>
+              <h3 className="text-lg font-semibold text-gray-700">{disease}</h3>
+              {output.error ? (
+                <p className="text-red-500">Error: {output.error}</p>
+              ) : (
+                <p className="text-gray-900 font-bold">
+                  Risk:{" "}
+                  <span style={{ color: getColor(output.risk) }}>
+                    {output.risk || "N/A"}
+                  </span>
+                  <br />
+                  Score:{" "}
+                  {typeof output.score === "number"
+                    ? output.score.toFixed(2)
+                    : Number.isFinite(Number(output.score))
+                    ? Number(output.score).toFixed(2)
+                    : "N/A"}
+                </p>
+              )}
             </div>
           ))}
-        </div>
-      )}
+  </div>
+)}
+
     </div>
   );
 };
