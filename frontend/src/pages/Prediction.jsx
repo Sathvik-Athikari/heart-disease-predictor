@@ -1,6 +1,30 @@
 import React, { useState } from "react";
 import axios from "axios";
-import * as pdfjsLib from "pdfjs-dist/webpack"; // ✅ worker handled automatically
+import * as pdfjsLib from "pdfjs-dist/webpack"; // ✅ Handles PDF parsing
+
+// 🩺 Required attributes extracted from importantfeaturescoluns.pdf
+const REQUIRED_ATTRIBUTES = [
+  // 🧠 Stroke
+  "Age", "heart_disease", "Married", "BMI", "Hypertension",
+  "glucose_level", "Sex", "smoking_status",
+
+  // 💉 Hypertension
+  "systolic_bp", "BP_Medications", "diastolic_bp", "sex",
+  "diabetes", "heart_rate", "cigsPerDay", "cholesterol", "smokes",
+
+  // ❤️ Heart Failure
+  "oldpeak", "cholesterol", "max_hr", "resting_bp", "fasting_bs",
+  "Chest_pain_type", "Resting_ecg", "Fasting_bs", "St_slope",
+
+  // 💔 Heart Attack
+  "Troponin", "CK_MB", "blood_sugar",
+
+  // 🫀 CAD
+  "typical_angina", "Region", "RWMA", "K", "EF-TTE", "hypertension",
+  "FH", "Tinversion", "HDL", "ESR", "Lymph", "HB", "WBC", "Weight",
+  "CR", "triglycerides", "FBS", "Na", "LDL", "PLT", "BUN", "Neut",
+  "Length"
+];
 
 const Prediction = () => {
   const [file, setFile] = useState(null);
@@ -11,16 +35,9 @@ const Prediction = () => {
   const [manualInputs, setManualInputs] = useState({});
   const [parsedFeatures, setParsedFeatures] = useState({});
 
-  // ✅ Required attributes from your PDF file
-  const REQUIRED_COLUMNS = {
-    stroke: ["Age", "heart_disease", "Married", "BMI", "Hypertension", "glucose_level", "Sex", "smoking_status"],
-    hypertension: ["systolic_bp", "BP_Medications", "diastolic_bp", "sex", "diabetes", "heart_rate", "BMI", "glucose_level", "Age", "cigsPerDay", "cholesterol", "smokes"],
-    heart_failure: ["oldpeak", "cholesterol", "max_hr", "Sex", "resting_bp", "fasting_bs", "Age", "Chest_pain_type", "Resting_ecg", "Fasting_bs", "St_slope"],
-    heart_attack: ["Troponin", "CK_MB", "sex", "systolic_bp", "blood_sugar", "diastolic_bp", "heart_rate", "Age"],
-    cad: ["typical_angina", "Region", "RWMA", "K", "Age", "EF-TTE", "systolic_bp", "hypertension", "FH", "heart_rate", "Tinversion", "HDL", "ESR", "Lymph", "HB", "WBC", "Weight", "CR", "BMI", "triglycerides", "FBS", "diabetes", "Na", "LDL", "PLT", "smokes", "BUN", "Neut", "sex", "Length"]
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
   };
-
-  const handleFileChange = (e) => setFile(e.target.files[0]);
 
   // ✅ Extract text from PDF
   const extractTextFromPDF = async (file) => {
@@ -31,24 +48,21 @@ const Prediction = () => {
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const text = await page.getTextContent();
-      text.items.forEach((item) => (textContent += item.str + " "));
+      text.items.forEach((item) => {
+        textContent += item.str + " ";
+      });
     }
+
     return textContent;
   };
 
-  // 🔹 Parse extracted text into JSON
+  // ✅ Parse extracted text into feature-value pairs
   const parsePDFtoJSON = async (file) => {
     const text = await extractTextFromPDF(file);
     console.log("📄 Extracted PDF Text:", text);
 
     const parsed = {};
-
-    // Combine all required features into one big list
-    const allFeatures = [
-      ...new Set(Object.values(REQUIRED_COLUMNS).flat())
-    ];
-
-    allFeatures.forEach((feature) => {
+    REQUIRED_ATTRIBUTES.forEach((feature) => {
       const regex = new RegExp(`${feature}\\s*[:\\-]?\\s*([A-Za-z0-9\\.]+)`, "i");
       const match = text.match(regex);
       if (match) {
@@ -57,22 +71,17 @@ const Prediction = () => {
         parsed[feature] = value;
       }
     });
+
     console.log("✅ Parsed Features:", parsed);
     return parsed;
   };
 
-  // Manual input change handler
+  // ✅ Handle manual input updates
   const handleInputChange = (e, field) => {
     setManualInputs({ ...manualInputs, [field]: e.target.value });
   };
 
-  // 🔍 Check for missing fields BEFORE backend call
-  const checkMissingFields = (parsed) => {
-    const allRequired = new Set(Object.values(REQUIRED_COLUMNS).flat());
-    const missing = [...allRequired].filter((col) => !(col in parsed));
-    return missing;
-  };
-
+  // ✅ Handle file upload & prediction
   const handleUpload = async () => {
     if (!file) {
       setError("Please select a PDF report before uploading.");
@@ -83,70 +92,72 @@ const Prediction = () => {
     setLoading(true);
 
     try {
-      // 1️⃣ Extract + parse PDF
-      const parsed = await parsePDFtoJSON(file);
-      console.log("🧠 Final Extracted Data to Send Backend:", parsed);
+      const extracted = await parsePDFtoJSON(file);
+      setParsedFeatures(extracted);
 
-      setParsedFeatures(parsed);
-
-      // 2️⃣ Check for missing fields
-      const missing = checkMissingFields(parsed);
+      // Find missing fields
+      const missing = REQUIRED_ATTRIBUTES.filter(
+        (attr) => !(attr in extracted) || extracted[attr] === "" || extracted[attr] === undefined
+      );
 
       if (missing.length > 0) {
         setMissingFields(missing);
-        setError("Some required fields are missing. Please fill them manually below.");
+        setError("Some required fields are missing. Please enter them below.");
         setLoading(false);
-        return;
+        return; // ⛔ Wait for manual input
       }
 
-      // 3️⃣ No missing fields — send to backend
-      await sendToBackend(parsed);
-
+      // ✅ All fields available, send directly
+      await sendToBackend(extracted);
     } catch (err) {
       console.error(err);
-      setError("Error reading the report file.");
+      setError("Error processing the file.");
       setLoading(false);
     }
   };
 
-  // ✅ Combine manual inputs and send final data
+  // ✅ Merge manual inputs + extracted data and send to backend
   const handleManualSubmit = async () => {
-    const completeData = { ...parsedFeatures, ...manualInputs };
-    const stillMissing = checkMissingFields(completeData);
+    const finalData = { ...parsedFeatures, ...manualInputs };
+
+    // Check if all missing fields filled
+    const stillMissing = REQUIRED_ATTRIBUTES.filter(
+      (attr) => !(attr in finalData) || finalData[attr] === "" || finalData[attr] === undefined
+    );
 
     if (stillMissing.length > 0) {
-      setError("Please fill in all required fields before submitting.");
+      alert(`Please fill all required fields: ${stillMissing.join(", ")}`);
       return;
     }
 
-    setError("");
-    setMissingFields([]);
-    setLoading(true);
-    await sendToBackend(completeData);
+    await sendToBackend(finalData);
   };
 
+  // ✅ Send JSON to backend
   const sendToBackend = async (data) => {
+    console.log("📤 Final JSON sent to backend:", data);
     try {
-      const response = await axios.post(
-        "http://127.0.0.1:8000/predict_all", // ✅ Flask endpoint
-        { data }
-      );
+      const response = await axios.post("http://127.0.0.1:8000/predict_all", data);
+      console.log("✅ Backend response:", response.data);
       setResults(response.data.predictions);
+      setMissingFields([]);
       setError("");
     } catch (err) {
-      console.error(err);
-      setError("Backend error during prediction.");
+      console.error("❌ Backend Error:", err);
+      setError("Failed to get prediction from backend.");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Color for risk visualization
   const getColor = (riskLevel) => {
     if (!riskLevel) return "#9E9E9E";
-    if (riskLevel < 33) return "#4CAF50";
-    if (riskLevel < 66) return "#FFC107";
-    return "#F44336";
+    switch (riskLevel.toLowerCase()) {
+      case "low": return "#4CAF50";
+      case "moderate": return "#FFC107";
+      case "high": return "#F44336";
+      default: return "#9E9E9E";
+    }
   };
 
   return (
@@ -174,7 +185,7 @@ const Prediction = () => {
         {error && <p className="text-red-500 text-center mt-4">{error}</p>}
       </div>
 
-      {/* Missing input fields */}
+      {/* Manual Input for Missing Fields */}
       {missingFields.length > 0 && (
         <div className="mt-6 bg-white p-6 rounded-xl shadow-lg w-full max-w-2xl">
           <h3 className="text-lg font-semibold mb-4 text-gray-700">
@@ -203,7 +214,7 @@ const Prediction = () => {
         </div>
       )}
 
-      {/* Results */}
+      {/* Results Section */}
       {results && (
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl">
           {Object.entries(results).map(([disease, output]) => (
@@ -219,22 +230,16 @@ const Prediction = () => {
                 <p className="text-gray-900 font-bold">
                   Risk:{" "}
                   <span style={{ color: getColor(output.risk) }}>
-                    {output.risk || "N/A"}
-                  </span>
+                    {output.risk}
+                  </span>{" "}
                   <br />
-                  Score:{" "}
-                  {typeof output.score === "number"
-                    ? output.score.toFixed(2)
-                    : Number.isFinite(Number(output.score))
-                    ? Number(output.score).toFixed(2)
-                    : "N/A"}
+                  Score: {Number(output.score).toFixed(2)}%
                 </p>
               )}
             </div>
           ))}
-  </div>
-)}
-
+        </div>
+      )}
     </div>
   );
 };
