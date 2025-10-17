@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 const diseases = [
   {
     name: "Coronary Artery Disease",
-    image: "/images/cad.png", // replace with actual image
+    image: "/images/coronary.png", // replace with actual image
     description:
       "Coronary Artery Disease occurs when major blood vessels supplying the heart become damaged or blocked due to plaque buildup.",
     causes: ["High cholesterol", "Smoking", "High blood pressure"],
@@ -35,7 +35,7 @@ const diseases = [
   },
   {
     name: "Hypertensive Heart Disease",
-    image: "/images/hhd.png",
+    image: "/images/hypertension.png",
     description:
       "This disease develops due to long-term high blood pressure, causing the heart to work harder and weaken over time.",
     causes: ["Prolonged high BP", "Obesity", "Smoking"],

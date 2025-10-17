@@ -1,12 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const navigate = useNavigate();
 
-  // State for profile image preview
-  const [profileImage, setProfileImage] = useState("/default-avatar.png"); // fallback image
+  const [profileImage, setProfileImage] = useState("/default-avatar.png");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+
+  // Optional editable fields
+  const [phone, setPhone] = useState("");
+  const [age, setAge] = useState("");
+  const [sex, setSex] = useState("");
+  const [maritalStatus, setMaritalStatus] = useState("");
+  const [occupation, setOccupation] = useState("");
+  const [address, setAddress] = useState("");
+
+  useEffect(() => {
+    // Get stored user info from localStorage
+    const storedName = localStorage.getItem("username") || "";
+    const storedEmail = localStorage.getItem("email") || "";
+
+    setUsername(storedName);
+    setEmail(storedEmail);
+  }, []);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -31,7 +49,7 @@ const Profile = () => {
         Patient Profile
       </motion.h1>
 
-      {/* Profile Section */}
+      {/* Profile Card */}
       <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-2xl p-8">
         {/* Profile Image */}
         <div className="flex flex-col items-center mb-6">
@@ -59,8 +77,10 @@ const Profile = () => {
             </label>
             <input
               type="text"
-              defaultValue="John Doe"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter your name"
             />
           </div>
 
@@ -70,8 +90,9 @@ const Profile = () => {
             </label>
             <input
               type="email"
-              defaultValue="johndoe@email.com"
-              className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              value={email}
+              readOnly
+              className="mt-1 block w-full rounded-lg border px-3 py-2 bg-gray-100 shadow-sm"
             />
           </div>
 
@@ -81,20 +102,23 @@ const Profile = () => {
             </label>
             <input
               type="tel"
-              defaultValue="+91 9876543210"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter phone number"
               className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Predictions Taken
+              Address
             </label>
             <input
-              type="number"
-              value={5}
-              readOnly
-              className="mt-1 block w-full rounded-lg border px-3 py-2 bg-gray-100 shadow-sm"
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Enter your address"
+              className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
         </div>
@@ -107,7 +131,9 @@ const Profile = () => {
             </label>
             <input
               type="number"
-              defaultValue="28"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
+              placeholder="Enter age"
               className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
@@ -116,7 +142,12 @@ const Profile = () => {
             <label className="block text-sm font-medium text-gray-700">
               Sex
             </label>
-            <select className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            <select
+              value={sex}
+              onChange={(e) => setSex(e.target.value)}
+              className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Select</option>
               <option>Male</option>
               <option>Female</option>
               <option>Other</option>
@@ -127,7 +158,12 @@ const Profile = () => {
             <label className="block text-sm font-medium text-gray-700">
               Marital Status
             </label>
-            <select className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            <select
+              value={maritalStatus}
+              onChange={(e) => setMaritalStatus(e.target.value)}
+              className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Select</option>
               <option>Single</option>
               <option>Married</option>
               <option>Divorced</option>
@@ -140,19 +176,27 @@ const Profile = () => {
             </label>
             <input
               type="text"
-              defaultValue="Software Engineer"
+              value={occupation}
+              onChange={(e) => setOccupation(e.target.value)}
+              placeholder="Enter occupation"
               className="mt-1 block w-full rounded-lg border px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
         </div>
 
-        {/* History Button */}
-        <div className="mt-8 flex justify-center">
+        {/* Save / Back Buttons */}
+        <div className="mt-8 flex justify-center gap-4">
           <button
-            onClick={() => navigate("/history")}
+            onClick={() => navigate("/home")}
+            className="bg-gray-300 text-gray-800 px-6 py-3 rounded-lg shadow-md hover:bg-gray-400 transition"
+          >
+            Back
+          </button>
+          <button
+            onClick={() => alert("Profile saved successfully!")}
             className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-700 transition"
           >
-            View History
+            Save Profile
           </button>
         </div>
       </div>

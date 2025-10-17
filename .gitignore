@@ -13,9 +13,9 @@ env/
 .venv/
 
 # Model files (keep them local or on drive, not in GitHub)
-*.keras
+
 *.h5
-*.joblib
+
 *.pkl
 *.pt
 
@@ -39,3 +39,5 @@ dist/
 .vscode/
 .DS_Store
 Thumbs.db
+users.db
+*.db
