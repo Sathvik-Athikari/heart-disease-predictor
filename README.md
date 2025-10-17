@@ -69,7 +69,7 @@ npm install
 npm run dev
 
 
-.env file 
+.env
 
 FLASK_SECRET_KEY=secret-key
 PORT=8000
