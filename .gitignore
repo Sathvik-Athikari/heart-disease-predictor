@@ -41,3 +41,7 @@ dist/
 Thumbs.db
 users.db
 *.db
+
+*.pptx
+*.docx
+
